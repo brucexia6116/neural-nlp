@@ -233,8 +233,9 @@ class Trainer:
                 hybrid_target_generator(X_study[train_idxs], X_target[train_idxs],
                                        self.other_vecs[other_aspects[0]].X, self.other_vecs[other_aspects[1]].X,
                                        cdnos=cdnos[train_idxs],
+                                       exp_group=self.exp_group, 
+                                       exp_id=self.exp_id,
                                        nb_sample=batch_size,
-                                       exp_group=self.exp_group, exp_id=self.exp_id,
                                        seed=1337, # for repeatability
                                        neg_nb=-1 if self.loss == 'hinge' else 0,
                                        cdno_matching=self.source!=self.target,
