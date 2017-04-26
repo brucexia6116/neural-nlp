@@ -46,12 +46,13 @@ def per_class_f1s(ys):
 
     return f1s + [macro_f1]
 
-def per_class_accs(ys):
+def per_class_accs(ys, multi_label=True):
     """Build up a list of callbacks to compute the per-class accuracies
 
     Parameters
     ----------
     ys : labels for training data
+    multi_label : True if ys has multiple labels per training example
 
     """
     nb_train, nb_class = ys.shape
@@ -59,7 +60,7 @@ def per_class_accs(ys):
 
     accs = [0]*nb_class
     for i in classes:
-        keras_acc_wapper = partial(compute_acc, i)
+        keras_acc_wapper = partial(compute_acc, i, multi_label)
         keras_acc_wapper.__name__ = 'acc_{}'.format(i) # keras compile demands __name__ be set
         
         accs[i] = keras_acc_wapper
@@ -83,7 +84,7 @@ def average(inputs):
         accum += input
     return accum / float(len(inputs))
 
-def trainable_weights(model):
+def get_trainable_weights(model):
     """Find all layers which are trainable in the model
 
     Surprisingly `model.trainable_weights` will return layers for which
@@ -122,7 +123,7 @@ def stratified_batch_generator(X_train, y_train, batch_size, mb_ratios, num_clas
 
         yield X_train[batch_idxs], to_categorical(y_train[batch_idxs])
 
-def cnn_embed(words, filter_lens, nb_filter, max_doclen):
+def cnn_embed(words, filter_lens, nb_filter, max_doclen, reg, name):
     """Add conv -> max_pool -> flatten for each filter length
     
     Parameters
@@ -131,19 +132,35 @@ def cnn_embed(words, filter_lens, nb_filter, max_doclen):
     filter_lens : list of n-gram filers to run over `words`
     nb_filter : number of each ngram filters to use
     max_doclen : length of the document
+    reg : regularization strength
+    name : name to give the merged vector
     
     """
     from keras.layers import Convolution1D, MaxPooling1D, Flatten, merge
-
+    
+    nb_filter = int(nb_filter)
     activations = [0]*len(filter_lens)
     for i, filter_len in enumerate(filter_lens):
         convolved = Convolution1D(nb_filter=nb_filter,
                                   filter_length=filter_len,
-                                  activation='relu')(words)
+                                  activation='relu',
+                                  W_regularizer=l2(reg))(words)
 
-        max_pooled = MaxPooling1D(pool_length=max_doclen-(filter_len-1))(convolved) # max-1 pooling
+        max_pooled = MaxPooling1D(pool_length=max_doclen-filter_len+1)(convolved) # max-1 pooling
         flattened = Flatten()(max_pooled)
 
         activations[i] = flattened
 
-    return merge(activations, mode='concat') if len(filter_lens) > 1 else flattened
+    return merge(activations, mode='concat', name=name) if len(filter_lens) > 1 else flattened
+
+def top_reviews(cdnos, k):
+    top_cdnos = set(cdnos.value_counts().sort_values(ascending=False)[:k])
+    top_idxs = cdnos.map(lambda cdno: cdno in top_cdnos).index
+
+    return np.array(top_idxs)
+
+    # get study indices to train on based on k most popular reviews
+    df = df[df.cdno.map(lambda cdno: cdno in top_cdnos)] # throw out studies we are not using
+    cdnos = df.reset_index(drop=True).cdno # get cdnos so we can map studies to their cdno
+    train_idxs, val_idxs = np.array((df.train == True).index), np.array((df.train == True).index)
+
