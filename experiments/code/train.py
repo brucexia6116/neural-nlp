@@ -127,6 +127,7 @@ def main(exp_group='', exp_id='', nb_epoch=5, nb_filter=1000, filter_lens='1,2,3
     history = trainer.train(train_study_idxs, val_study_idxs, nb_epoch, batch_size,
             callbacks, fold_idx, metric, fit_generator, cdnos, nb_sample, log_full, mb_ratio)
 
+    trainer.save_architecture()
 
 @plac.annotations(
         exp_group=('the name of the experiment group for loading weights', 'option', None, str),

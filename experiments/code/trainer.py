@@ -141,6 +141,8 @@ class Trainer:
         self.model.summary()
         self.loss = loss
 
+    
+
     def save_architecture(self):
         """Write architecture of model to disk
         
@@ -150,6 +152,12 @@ class Trainer:
         """
         json_string = self.model.to_json()
         model_loc = '../store/models/{}/{}.json'.format(self.exp_group, self.exp_id)
+        
+        # ensure the output dir under store exists
+        directory = os.path.dirname(model_loc)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
         open(model_loc, 'w').write(json_string)
 
     def train(self, train_idxs, val_idxs, nb_epoch, batch_size, callback_list,
