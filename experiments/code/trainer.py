@@ -151,7 +151,7 @@ class Trainer:
         
         """
         json_string = self.model.to_json()
-        model_loc = '../store/models/{}/{}.json'.format(self.exp_group, self.exp_id)
+        model_loc = '../store/models/{}.json'.format(self.target)
         
         # ensure the output dir under store exists
         directory = os.path.dirname(model_loc)
