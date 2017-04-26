@@ -170,14 +170,14 @@ class Trainer:
 
         # [X_source, X_target], y = next(study_target_generator(**gen_args))
         # loggers.FULL = log_full # whether to log full tensors
-        weight_str = '../store/weights/{}/{}/{}-{}.h5' # where to save model weights
+        weight_str = '../store/weights/{}-{}-{}.h5' # where to save model weights
 
         # define callbacks
-        cb = ModelCheckpoint(weight_str.format(self.exp_group, self.exp_id, fold, metric),
+        cb = ModelCheckpoint(weight_str.format(self.target, fold, metric),
                              monitor='loss',
                              save_best_only=True,
                              mode='min')
-        ce = ModelCheckpoint(weight_str.format(self.exp_group, self.exp_id, fold, 'loss'),
+        ce = ModelCheckpoint(weight_str.format(self.target, fold, 'loss'),
                              monitor='loss', # every time training loss goes down
                              mode='min')
 
